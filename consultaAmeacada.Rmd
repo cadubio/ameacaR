@@ -1,5 +1,5 @@
 ---
-title: "Espécies brasileiras ameaçadas de extinção"
+title: "Espécies brasileiras ameaçadas de extinção <span style='font-size: medium;color: gray'>v. 1.0.0</style>"
 
 output: html_document
 runtime: shiny
