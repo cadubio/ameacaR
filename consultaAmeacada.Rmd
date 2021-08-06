@@ -36,7 +36,7 @@ ameacadasPR <- readr::read_rds("listas/amecadasPR.rds")
 ameacadasSC <- readr::read_rds("listas/amecadasSC.rds")
 ameacadasRS <- readr::read_rds("listas/amecadasRS.rds")
 
-# Dois painéis "Pesquisar por ameaçadas" e "Tutotiais"
+# Dois painéis "Pesquisar por ameaçadas" e "Tutoriais"
 tabsetPanel(tabPanel("Pesquisar por ameaçadas",
                      tags$br(),
                      fluidPage(
@@ -129,15 +129,30 @@ tabsetPanel(tabPanel("Pesquisar por ameaçadas",
 ###### Nomes Colados ----------------------
 output$dados_colados <- DT::renderDataTable(server = FALSE, DT::datatable({
 
-# Pega os nomes do campo textAreaInput e transforma em uma tibble
-nomes <-
+# Pega os nomes do campo textAreaInput e transforma em uma tibble.
+# Os nomes colados, um por linha, estarão separados por "\n".
+# Extrai-se os nomes e armazena no objeto *nomes*.
+  nomes <-
   stringr::str_extract_all(input$nomesColados,
                            stringr::regex("\\b.*(?=\\n)"
                            ), simplify = TRUE) |> 
   purrr::map_df(tibble::as_tibble_col)
 
-# Se não há nomes no campo textAreaInput retorna uma data.frame vazio,
-# se não, retorna um data.frame da função get.taxa do pacote flora
+# Se *nomes* está vazio retorna uma data.frame vazio, se não, executa 
+# a função `get.taxa` do pacote flora.
+# Uma serie de verificações são executadas antes de passar os nomes para
+# `get.taxa`.
+
+# De acordo com o código intern. de nomenclatura botânica, os nomes científicos de 
+# espécies devem ser escrito no formato binomial, mas os nomes 
+# podem conter as abreviações aff., subsp., cf. sp., ssp. e var.
+# Primeiro: verifica-se se as abreviações contém o ponto ao 
+# final da abreviação. Se não tem acrescentá-o.
+# Segundo: os nomes são filtrados pegando-se as 4 primeiras palavras se contém
+# as abreviações var., subsp. ou ssp.
+# pega-se as 3 primeiras palavras se contém cf. ou aff.
+# e as 2 primeiras se não contém nenhuma das abreviações.
+# Assim, é possível filtrar os nomes com ou sem os nomes dos autores.
 ifelse(
   length(nomes) == 0,
   nomes_BFG <- data.frame(),
@@ -167,7 +182,12 @@ ifelse(
   }
 )   
     
-#
+# O campo textAreaInput está reativo, qualquer palavra inserida
+# será enviada a função `get.taxa`, que retornará uma linha vazia (NA)
+# para cada nome que não exista em Flora do Brasil 2020. Para se evitar isso, é verificada cada linha da tabela para que pelo menos uma não
+# seja vazia. 
+# Se há linhas sem NA os nomes colados são comparados com os nomes 
+# das listas de espécies ameaçadas do sul do Brasil.
 ifelse(
   TRUE %in% !is.na(nomes_BFG[1:length(nomes), 2]),
   {
@@ -185,6 +205,8 @@ ifelse(
       dplyr::transmute(dplyr::across(.cols = dplyr::everything(),
                                      list( ~ dplyr::na_if(., "")))) |>
       dplyr::rename_with( ~ gsub("_1", "", .x, fixed = TRUE))
+    
+    # Dividiu-se em dois objetos (comparaTudo e compara2) apenas para facilitar o entendimento.
          
     compara2 <-
       dplyr::left_join(nomes_BFG, comparaTudo,
@@ -258,6 +280,8 @@ caption = "Nomes científicos colados",
   ))
 
 ###### Nomes da Planilha  -------------- 
+# O arquivo recebido será filtrado pela extenção, sendo apenas permitido
+# csv, xls  ou xlsx.
 arquivo_recebido <- reactive({
   
   inFile <- input$planilha
@@ -265,7 +289,7 @@ arquivo_recebido <- reactive({
   ifelse(is.null(inFile),
          tabela <- data.frame(),
          tabela <- {
-           if (tolower(tools::file_ext(inFile$datapath)) == "xlsx") {
+           if (tolower(tools::file_ext(inFile$datapath)) == "xlsx" | tolower(tools::file_ext(inFile$datapath)) == "xls") {
              
              readxl::read_excel(inFile$datapath,
                                col_names = T,
@@ -283,7 +307,7 @@ arquivo_recebido <- reactive({
   tabela
   
 })
-
+# Se a planilha é enviada os botões são exibidos
 observeEvent(input$planilha, {
   
   output$sel_colunas <- renderUI({
@@ -304,7 +328,7 @@ observeEvent(input$planilha, {
             )
   })
 })
-  
+  # Se o botão "verifica" é pressionado os nomes são verificados 
   observeEvent(input$verifica, {
   
   # Coluna selecionada pelo usuário, que contém os nomes científicos
