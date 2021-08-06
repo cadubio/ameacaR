@@ -11,7 +11,7 @@ espécies ameaçadas de extinção.
 
 A primeira versão (1.0.0) busca por espécies de plantas (Angiospermas)
 ameaçadas de extinção em nível nacional e em cada estado do sul do
-Brasil [Paraná](https://www.sociedadechaua.org/publicacoes), ([Santa
+Brasil ([Paraná](https://www.sociedadechaua.org/publicacoes), [Santa
 Catarina](https://www.sde.sc.gov.br/index.php/biblioteca/consema/legislacao/resolucoes/325-resolucao-consema-no-512014-1/file)
 e [Rio Grande do
 Sul](http://www.mcn.fzb.rs.gov.br/conteudo/4816/?Homologada_a_nova_Lista_da_Flora_Ga%C3%BAcha_Amea%C3%A7ada_de_Extin%C3%A7%C3%A3o)).
@@ -20,15 +20,15 @@ Sul](http://www.mcn.fzb.rs.gov.br/conteudo/4816/?Homologada_a_nova_Lista_da_Flor
 
 ## Digitando os nomes científicos
 
-![](img/digitando.webm)
+![](img/digitando.gif)
 
 ## Colando os nomes científicos
 
-![](img/colando.webm)
+![](img/colando.gif)
 
 ## Enviando uma planilha com os nomes científicos
 
-![](img/enviar.webm)
+![](img/enviar.gif)
 
 # Novas versões
 
