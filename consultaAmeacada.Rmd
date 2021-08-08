@@ -1,6 +1,5 @@
 ---
 title: "Espécies brasileiras ameaçadas de extinção <span style='font-size: medium;color: gray'>v. 1.0.0</style>"
-
 output: html_document
 runtime: shiny
 ---
@@ -32,9 +31,9 @@ Simples! Você pode
 
 ```{r nomes, echo=FALSE, message=FALSE, warning=FALSE}
 # Carrega as listas de espécies ameaçadas do sul do brasil
-ameacadasPR <- readr::read_rds("listas/amecadasPR.rds")
-ameacadasSC <- readr::read_rds("listas/amecadasSC.rds")
-ameacadasRS <- readr::read_rds("listas/amecadasRS.rds")
+ameacadasPR <- readr::read_rds("listas/ameacadasPR.rds")
+ameacadasSC <- readr::read_rds("listas/ameacadasSC.rds")
+ameacadasRS <- readr::read_rds("listas/ameacadasRS.rds")
 
 # Dois painéis "Pesquisar por ameaçadas" e "Tutoriais"
 tabsetPanel(tabPanel("Pesquisar por ameaçadas",
@@ -77,14 +76,11 @@ tabsetPanel(tabPanel("Pesquisar por ameaçadas",
                        
                        tags$hr(),
                        
-                       fluidRow(
-                         column(
-                           width = 12,
-                           DT::dataTableOutput("dados_colados"),
-                           
-                           DT::dataTableOutput("dados_recebido"),
-                         )
-                       )
+                       fluidRow(column(
+                         width = 12,
+                         DT::dataTableOutput("dados_colados"),
+                         DT::dataTableOutput("dados_recebido"),
+                       ))
                      )),
             tabPanel(
               "Tutoriais",
@@ -137,62 +133,42 @@ output$dados_colados <- DT::renderDataTable(server = FALSE, DT::datatable({
                            stringr::regex("\\b.*(?=\\n)"
                            ), simplify = TRUE) |> 
   purrr::map_df(tibble::as_tibble_col)
-
-# Se *nomes* está vazio retorna uma data.frame vazio, se não, executa 
-# a função `get.taxa` do pacote flora.
-# Uma serie de verificações são executadas antes de passar os nomes para
-# `get.taxa`.
-
-# De acordo com o código intern. de nomenclatura botânica, os nomes científicos de 
-# espécies devem ser escrito no formato binomial, mas os nomes 
-# podem conter as abreviações aff., subsp., cf. sp., ssp. e var.
-# Primeiro: verifica-se se as abreviações contém o ponto ao 
-# final da abreviação. Se não tem acrescentá-o.
-# Segundo: os nomes são filtrados pegando-se as 4 primeiras palavras se contém
-# as abreviações var., subsp. ou ssp.
-# pega-se as 3 primeiras palavras se contém cf. ou aff.
-# e as 2 primeiras se não contém nenhuma das abreviações.
-# Assim, é possível filtrar os nomes com ou sem os nomes dos autores.
-ifelse(
-  length(nomes) == 0,
-  nomes_BFG <- data.frame(),
-  {
-    nomes2 <- nomes |> 
-      dplyr::filter(value != "") |> 
-      dplyr::mutate(value = stringr::str_replace(value, 
+  
+  # Aguarda até que *nomes* não esteja vazio
+  req(length(nomes) != 0, cancelOutput = FALSE)
+  
+  nomes2 <- nomes |>
+      dplyr::filter(value != "") |>
+      dplyr::mutate(value = stringr::str_replace(value,
                                                  pattern = "(\\saff(?=\\s)|\\ss?sp\\b|\\scf(?=\\s))",
                                                  replacement = "\\1." )) |>
-      dplyr::mutate(value = stringr::str_replace(value, 
+      dplyr::mutate(value = stringr::str_replace(value,
                                                  pattern = "(\\.\\.)",
                                                  replacement = "." )) |>
       dplyr::mutate(
-        value = dplyr::if_else(
-          stringr::str_detect(value, "\\svar\\.?|\\ssubsp\\.?|\\sssp\\.?"),
-          stringr::word(value, 1, 4),
-          dplyr::if_else(
-            stringr::str_detect(value, "\\scf\\.?\\b|\\saff\\.?\\b"),
-            stringr::word(value, 1, 3),
-            stringr::word(value, 1, 2)
-          )
+        value = dplyr::case_when(
+          stringr::str_detect(value, "\\svar\\.?|\\ssubsp\\.?|\\sssp\\.?") ~ stringr::word(value, 1, 4),
+          stringr::str_detect(value, "\\scf\\.?\\b|\\saff\\.?\\b") ~ stringr::word(value, 1, 3),
+          stringr::str_detect(value, "[A-z]+\\s[a-z]+\\b") ~ stringr::word(value, 1, 2),
+          TRUE ~ stringr::word(value, 1)
         )
-      ) |> 
+      ) |>
       dplyr::distinct(value)
+
+  # Pega os nomes em Flora do Brasil 2020
+  nomes_BFG <- flora::get.taxa(nomes2$value)
     
-    nomes_BFG <- flora::get.taxa(nomes2$value)
-  }
-)   
+    # O campo textAreaInput está reativo, qualquer palavra inserida
+    # será enviada a função `get.taxa`, que retornará uma linha vazia (`NA`)
+    # para cada nome que não exista em Flora do Brasil 2020. Para se evitar 
+    # o retorno de uma tabela vazia, é verificada para que pelo menos uma 
+    # linha da tabela não seja vazia.
+    req(TRUE %in% !is.na(nomes_BFG[1:length(nomes), 2]), cancelOutput = FALSE)
     
-# O campo textAreaInput está reativo, qualquer palavra inserida
-# será enviada a função `get.taxa`, que retornará uma linha vazia (NA)
-# para cada nome que não exista em Flora do Brasil 2020. Para se evitar isso, é verificada cada linha da tabela para que pelo menos uma não
-# seja vazia. 
-# Se há linhas sem NA os nomes colados são comparados com os nomes 
-# das listas de espécies ameaçadas do sul do Brasil.
-ifelse(
-  TRUE %in% !is.na(nomes_BFG[1:length(nomes), 2]),
-  {
+    # Se há linhas sem NA, os nomes colados são comparados com os nomes
+    # das listas de espécies ameaçadas do sul do Brasil.
     comparaTudo <-  purrr::map2_df(
-      list(nomes_BFG),
+      list(dplyr::filter(nomes_BFG, !is.na(search.str))),
       list(ameacadasPR,
            ameacadasSC,
            ameacadasRS),
@@ -204,10 +180,12 @@ ifelse(
                                      ~ toString(na.omit(.x)))) |>
       dplyr::transmute(dplyr::across(.cols = dplyr::everything(),
                                      list( ~ dplyr::na_if(., "")))) |>
+      dplyr::mutate(dplyr::across(.cols = -original.search_1, 
+                                 ~stringr::str_replace(., "([A-Z]{2})(,\\s[A-Z]{2})+", "\\1"))) |>
       dplyr::rename_with( ~ gsub("_1", "", .x, fixed = TRUE))
-    
+
     # Dividiu-se em dois objetos (comparaTudo e compara2) apenas para facilitar o entendimento.
-         
+    #
     compara2 <-
       dplyr::left_join(nomes_BFG, comparaTudo,
                        by = "original.search") |>
@@ -233,16 +211,9 @@ ifelse(
         nome_correto,
         nome_aceito
       )
-         
-       },
-       
-       {
-         compara2 <- data.frame()
-       })
-      
-      compara2
-
     
+    compara2
+
   },
 caption = "Nomes científicos colados",
   extensions = c(
@@ -266,17 +237,17 @@ caption = "Nomes científicos colados",
       )
     )
   ),
-  # colnames = c(
-  #   "Família" = "familia",
-  #   "Espécie" = "especie",
-  #   "CNCFlora" = "cncflora",
-  #   "MMA" = "mma",
-  #   "PR" = "pr",
-  #   "SC" = "sc",
-  #   "RS" = "rs",
-  #   "Nome Correto?" = "nome_correto",
-  #   "Nome Aceito" = "nome_aceito"
-  # )
+  colnames = c(
+    "Família" = "familia",
+    "Espécie" = "especie",
+    "CNCFlora" = "cncflora",
+    "MMA" = "mma",
+    "PR" = "pr",
+    "SC" = "sc",
+    "RS" = "rs",
+    "Nome Correto?" = "nome_correto",
+    "Nome Aceito" = "nome_aceito"
+  )
   ))
 
 ###### Nomes da Planilha  -------------- 
@@ -342,25 +313,24 @@ observeEvent(input$planilha, {
   nomes <- arquivo_recebido()  |>
     dplyr::filter(!!coluna_selecionada != "") |>
     dplyr::mutate(
-      (!!coluna_selecionada) := stringr::str_replace(.data[[coluna_selecionada]],
+      !!coluna_selecionada := stringr::str_replace(.data[[coluna_selecionada]],
                                                    pattern = "(\\saff(?=\\s)|\\ss?sp\\b|\\scf(?=\\s))",
                                                    replacement = "\\1.")
     ) |>
     # Essa próxima linha pode ser removida se a regex da linha anterior for melhor trabalhada
     dplyr::mutate(
-      (!!coluna_selecionada) := stringr::str_replace(.data[[coluna_selecionada]],
+      !!coluna_selecionada := stringr::str_replace(.data[[coluna_selecionada]],
                                                    pattern = "(\\.\\.)",
                                                    replacement = ".")
     ) |>
-    dplyr::mutate(value = dplyr::if_else(
-      stringr::str_detect(.data[[coluna_selecionada]], "\\svar\\.?\\b|\\ssubsp\\.?\\b|\\bssp\\.?\\b"),
-      stringr::word(.data[[coluna_selecionada]], 1, 4),
-      dplyr::if_else(
-        stringr::str_detect(.data[[coluna_selecionada]], "\\scf\\.?\\b|\\saff\\.?\\b"),
-        stringr::word(.data[[coluna_selecionada]], 1, 3),
-        stringr::word(.data[[coluna_selecionada]], 1, 2)
+    dplyr::mutate(
+      value = dplyr::case_when(
+        stringr::str_detect(.data[[coluna_selecionada]], "\\svar\\.?|\\ssubsp\\.?|\\sssp\\.?") ~ stringr::word(.data[[coluna_selecionada]], 1, 4),
+        stringr::str_detect(.data[[coluna_selecionada]], "\\scf\\.?\\b|\\saff\\.?\\b") ~ stringr::word(.data[[coluna_selecionada]], 1, 3),
+        stringr::str_detect(.data[[coluna_selecionada]], "[A-z]+\\s[a-z]+\\b") ~ stringr::word(.data[[coluna_selecionada]], 1, 2),
+        TRUE ~ stringr::word(.data[[coluna_selecionada]], 1)
       )
-    )) |>
+      ) |> 
     dplyr::distinct(value)
 
   # Busca as informações do nomes em Flora do Brasil 2020
@@ -368,7 +338,7 @@ observeEvent(input$planilha, {
 
   # Verifica as espécies ameaçadas
   comparaTudo <-  purrr::map2_df(
-  list(nomes_BFG),
+  list(dplyr::filter(nomes_BFG, !is.na(search.str))),
   list(ameacadasPR,
        ameacadasSC,
        ameacadasRS),
