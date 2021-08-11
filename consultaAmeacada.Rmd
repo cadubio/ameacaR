@@ -7,7 +7,9 @@ runtime: shiny
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-Autor: Carlos Eduardo de Siqueira - [carlossiqueira@ima.sc.gov.br](mailto:carlossiqueira@ima.sc.gov.br?subject=App Espécies brasileiras ameaçadas de extinção)
+Autor: Carlos Eduardo de Siqueira [![envie um email](img/email28.png)](mailto:carlossiqueira@ima.sc.gov.br?subject=Dúvida App Espécies brasileiras ameaçadas de extinção)\ [![Github](img/GitHub-Mark-32px.png){height=28px}](https://github.com/cadubio/ameacaR)
+
+<!-- ["\U2709"](mailto:carlossiqueira@ima.sc.gov.br?subject=App Espécies brasileiras ameaçadas de extinção) -->
 
 ## O que é?
 
@@ -25,7 +27,7 @@ Simples! Você pode
 
 1. **Colar** ou **digitar** os nomes científicos das espécies no campo à esquerda.
 
-2. Clicar em **enviar planilha** para submeter uma planilha com os nomes científicos. Após o envio, escolha a coluna da planilha que contém os nomes científicos a serem verificados, e clique no botão "verificar ameaçadas". Pode-se clicar em "ver coluna" para uma amostra com as 6 primeiras linhas da coluna selecionada.
+2. Clicar em **enviar planilha** para submeter uma planilha com os nomes científicos. Após o envio, escolha a coluna da planilha que contém os nomes científicos a serem verificados, e clique no botão "verificar ameaçadas". Pode-se clicar em "ver coluna" para uma amostra com as 6 primeiras linhas da coluna selecionada. Veja a aba **Tutoriais** para mais detalhes.
 
 ```{r nomes, echo=FALSE, message=FALSE, warning=FALSE}
 # Carrega as listas de espécies ameaçadas do sul do brasil
