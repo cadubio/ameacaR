@@ -1,5 +1,5 @@
 ---
-title: "Espécies brasileiras ameaçadas de extinção <span style='font-size: medium;color: gray'>v. 1.0.0</style>"
+title: "Espécies brasileiras ameaçadas de extinção"
 output: html_document
 runtime: shiny
 ---
@@ -26,8 +26,6 @@ Simples! Você pode
 1. **Colar** ou **digitar** os nomes científicos das espécies no campo à esquerda.
 
 2. Clicar em **enviar planilha** para submeter uma planilha com os nomes científicos. Após o envio, escolha a coluna da planilha que contém os nomes científicos a serem verificados, e clique no botão "verificar ameaçadas". Pode-se clicar em "ver coluna" para uma amostra com as 6 primeiras linhas da coluna selecionada.
-
-
 
 ```{r nomes, echo=FALSE, message=FALSE, warning=FALSE}
 # Carrega as listas de espécies ameaçadas do sul do brasil
@@ -66,20 +64,20 @@ tabsetPanel(tabPanel("Pesquisar por ameaçadas",
                              buttonLabel = "Enviar planilha",
                              placeholder = "\U2B05 clicar"
                            ),
-                           
+
                            uiOutput("sel_colunas")
-                           
+
                          ),
                          column(width = 3,
                                 tableOutput("observaColuna"))
                        ),
-                       
+
                        tags$hr(),
-                       
+
                        fluidRow(column(
                          width = 12,
                          DT::dataTableOutput("dados_colados"),
-                         DT::dataTableOutput("dados_recebido"),
+                         DT::dataTableOutput("dados_recebidos"),
                        ))
                      )),
             tabPanel(
@@ -131,12 +129,12 @@ output$dados_colados <- DT::renderDataTable(server = FALSE, DT::datatable({
   nomes <-
   stringr::str_extract_all(input$nomesColados,
                            stringr::regex("\\b.*(?=\\n)"
-                           ), simplify = TRUE) |> 
+                           ), simplify = TRUE) |>
   purrr::map_df(tibble::as_tibble_col)
-  
+
   # Aguarda até que *nomes* não esteja vazio
-  req(length(nomes) != 0, cancelOutput = FALSE)
-  
+  req(length(nomes) != 0)
+
   nomes2 <- nomes |>
       dplyr::filter(value != "") |>
       dplyr::mutate(value = stringr::str_replace(value,
@@ -157,14 +155,14 @@ output$dados_colados <- DT::renderDataTable(server = FALSE, DT::datatable({
 
   # Pega os nomes em Flora do Brasil 2020
   nomes_BFG <- flora::get.taxa(nomes2$value)
-    
+
     # O campo textAreaInput está reativo, qualquer palavra inserida
     # será enviada a função `get.taxa`, que retornará uma linha vazia (`NA`)
-    # para cada nome que não exista em Flora do Brasil 2020. Para se evitar 
-    # o retorno de uma tabela vazia, é verificada para que pelo menos uma 
+    # para cada nome que não exista em Flora do Brasil 2020. Para se evitar
+    # o retorno de uma tabela vazia, é verificada para que pelo menos uma
     # linha da tabela não seja vazia.
-    req(TRUE %in% !is.na(nomes_BFG[1:length(nomes), 2]), cancelOutput = FALSE)
-    
+    req(TRUE %in% !is.na(nomes_BFG[1:dim(nomes_BFG)[1], 2]))
+
     # Se há linhas sem NA, os nomes colados são comparados com os nomes
     # das listas de espécies ameaçadas do sul do Brasil.
     comparaTudo <-  purrr::map2_df(
@@ -180,7 +178,7 @@ output$dados_colados <- DT::renderDataTable(server = FALSE, DT::datatable({
                                      ~ toString(na.omit(.x)))) |>
       dplyr::transmute(dplyr::across(.cols = dplyr::everything(),
                                      list( ~ dplyr::na_if(., "")))) |>
-      dplyr::mutate(dplyr::across(.cols = -original.search_1, 
+      dplyr::mutate(dplyr::across(.cols = -original.search_1,
                                  ~stringr::str_replace(., "([A-Z]{2})(,\\s[A-Z]{2})+", "\\1"))) |>
       dplyr::rename_with( ~ gsub("_1", "", .x, fixed = TRUE))
 
@@ -211,7 +209,7 @@ output$dados_colados <- DT::renderDataTable(server = FALSE, DT::datatable({
         nome_correto,
         nome_aceito
       )
-    
+
     compara2
 
   },
@@ -250,62 +248,62 @@ caption = "Nomes científicos colados",
   )
   ))
 
-###### Nomes da Planilha  -------------- 
+###### Nomes da Planilha  --------------
 # O arquivo recebido será filtrado pela extenção, sendo apenas permitido
 # csv, xls  ou xlsx.
 arquivo_recebido <- reactive({
-  
+
   inFile <- input$planilha
-  
+
   ifelse(is.null(inFile),
          tabela <- data.frame(),
          tabela <- {
            if (tolower(tools::file_ext(inFile$datapath)) == "xlsx" | tolower(tools::file_ext(inFile$datapath)) == "xls") {
-             
+
              readxl::read_excel(inFile$datapath,
                                col_names = T,
                                col_types = "text")
            } else {
-             
-             data.table::fread(inFile$datapath, 
-                               encoding = "Latin-1", 
+
+             data.table::fread(inFile$datapath,
+                               encoding = "Latin-1",
                                fill = TRUE
-             ) |> 
-               janitor::clean_names() 
-               
+             ) |>
+               janitor::clean_names()
+
            }
          })
   tabela
-  
+
 })
 # Se a planilha é enviada os botões são exibidos
 observeEvent(input$planilha, {
-  
+
   output$sel_colunas <- renderUI({
-    
+
     tagList(selectInput(inputId = "colunas",
                         label = "Escolha a coluna com os nomes científicos",
                         choices = names(arquivo_recebido())),
-            actionButton("verifica", 
-                         label = "verificar ameaçadas", 
+            actionButton("verifica",
+                         label = "verificar ameaçadas",
                          class = "btn-primary btn-sm",
                          icon = icon("clipboard-list")
                          ),
-            actionButton("btn_observaCol", 
+            actionButton("btn_observaCol",
                          label = "ver coluna",
                          class = "btn-secundary btn-sm",
                          icon = icon("eye")),
-            
+
             )
   })
 })
-  # Se o botão "verifica" é pressionado os nomes são verificados 
+  # Se o botão "verifica" é pressionado os nomes são verificados
   observeEvent(input$verifica, {
-  
+
   # Coluna selecionada pelo usuário, que contém os nomes científicos
   coluna_selecionada <- input$colunas
-  
-  # Filtra os nomes nomes científicos para remover os nomes dos autores. 
+
+  # Filtra os nomes nomes científicos para remover os nomes dos autores.
   # Verifica se as abreviações sp., aff., var. e subsp. contém os pontos finais,
   # se não tem, adiciona o ponto.
   # Se o nome contém var. ou subsp. pega as quatro primeiras palavras.
@@ -330,7 +328,7 @@ observeEvent(input$planilha, {
         stringr::str_detect(.data[[coluna_selecionada]], "[A-z]+\\s[a-z]+\\b") ~ stringr::word(.data[[coluna_selecionada]], 1, 2),
         TRUE ~ stringr::word(.data[[coluna_selecionada]], 1)
       )
-      ) |> 
+      ) |>
     dplyr::distinct(value)
 
   # Busca as informações do nomes em Flora do Brasil 2020
@@ -348,16 +346,16 @@ observeEvent(input$planilha, {
   #dplyr::select(nome.original, pr, sc, rs) |>
   dplyr::group_by(original.search) |>
   dplyr::summarise(dplyr::across(.cols = c(pr,sc,rs),
-                                 ~ toString(na.omit(.x)))) |> 
+                                 ~ toString(na.omit(.x)))) |>
   dplyr::transmute(dplyr::across(.cols = dplyr::everything(),
-                                 list(~dplyr::na_if(.,"")))) |> 
+                                 list(~dplyr::na_if(.,"")))) |>
   dplyr::rename_with(~gsub("_1", "", .x, fixed = TRUE))
-      
+
    # Foi divido em dois objetos (comparaTudo e compara2) apenas para facilitar a futura leitura do código.
-   # As colunas com as categorias de ameaça de cada estado são mescladas ao objeto com os nomes científicos.  
+   # As colunas com as categorias de ameaça de cada estado são mescladas ao objeto com os nomes científicos.
    compara2 <-
-  dplyr::left_join(nomes_BFG, comparaTudo, 
-                   by = "original.search") |> 
+  dplyr::left_join(nomes_BFG, comparaTudo,
+                   by = "original.search") |>
   dplyr::distinct(original.search, .keep_all = T) |>
   dplyr::mutate(
     nome_correto = dplyr::case_when(
@@ -380,9 +378,9 @@ observeEvent(input$planilha, {
     nome_correto,
     nome_aceito
   )
-   
-  output$dados_recebido <- DT::renderDataTable(server = FALSE, DT::datatable({
-    
+
+  output$dados_recebidos <- DT::renderDataTable(server = FALSE, DT::datatable({
+
     compara2
 
   },
@@ -421,11 +419,11 @@ observeEvent(input$planilha, {
   ),
   ))
 })
-  
+
 observeEvent(input$btn_observaCol, {
       coluna_selecionada <- input$colunas
-      coluna <- arquivo_recebido() |> 
-        dplyr::select(coluna_selecionada) |> 
+      coluna <- arquivo_recebido() |>
+        dplyr::select(coluna_selecionada) |>
         head()
   output$observaColuna <- renderTable(coluna)
   })
