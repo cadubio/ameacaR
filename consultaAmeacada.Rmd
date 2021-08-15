@@ -20,7 +20,7 @@ A [categoria de ameaça](https://www.oeco.org.br/dicionario-ambiental/27904-ente
 
 Os nomes científicos são validados conforme [Flora do Brasil 2020](http://floradobrasil.jbrj.gov.br/), através do pacote `R` [FLORA](http://www.github.com/gustavobio/flora).
 
-[Notas sobres as listas estaduais.](https://github.com/cadubio/ameacaR#notas-sobres-as-listas-estaduais)
+Para mais detalhes sobre as a validação dos nomes científicos das listas estaduais veja [Notas sobres as listas estaduais.](https://github.com/cadubio/ameacaR#notas-sobres-as-listas-estaduais).
 
 
 ### Como usar?
