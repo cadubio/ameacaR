@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# ameacaR
+# ameaçaR
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -10,7 +10,7 @@ O objetivo deste aplicativo é servir como ferramente de busca por
 espécies ameaçadas de extinção.
 
 A primeira versão (1.0.0) busca por espécies de plantas (Angiospermas)
-ameaçadas de extinção em nível nacional e, estadual para cada estado do
+ameaçadas de extinção em nível nacional e, estadual, para cada estado do
 sul do Brasil ([Paraná](https://www.sociedadechaua.org/publicacoes),
 [Santa
 Catarina](https://www.sde.sc.gov.br/index.php/biblioteca/consema/legislacao/resolucoes/325-resolucao-consema-no-512014-1/file)
@@ -64,7 +64,7 @@ Flora Ameaçada no Estado do Paraná (2020), com o pacote `R`
 [flora](http://www.github.com/gustavobio/flora).
 
 ``` r
-readr::read_csv("testes/ameacadasPR.csv")
+readr::read_csv("testes/ameacadasPR.csv", show_col_types = FALSE)
 #> # A tibble: 582 × 3
 #>    nome.original              nome.BFG                   pr   
 #>    <chr>                      <chr>                      <chr>
@@ -89,8 +89,8 @@ Dos 582 nomes científicos constantes na lista de ameaçadas do Paraná
 2020](http://floradobrasil.jbrj.gov.br/)
 
 ``` r
-readr::read_csv("testes/ameacadasPR.csv") |> 
-  dplyr::filter(is.na(nome.BFG))
+readr::read_csv("testes/ameacadasPR.csv", show_col_types = FALSE) |> 
+  dplyr::filter(is.na(nome.BFG)) # filtra pelo nomes que não foram encontrados em Flora do Brasil
 #> # A tibble: 23 × 3
 #>    nome.original                               nome.BFG pr   
 #>    <chr>                                       <chr>    <chr>
@@ -108,41 +108,72 @@ readr::read_csv("testes/ameacadasPR.csv") |>
 ```
 
 Verificando estes 23 nomes, com a função `TNRS`do pacote
-[TNRS](https://github.com/EnquistLab/RTNRS), temos agora 6 nomes
+[TNRS](https://github.com/EnquistLab/RTNRS), temos agora 8 nomes
 científicos sem correspondência nas bases de dados [Flora do Brasil
 2020](http://floradobrasil.jbrj.gov.br/),
-[Tropicos](https://www.tropicos.org/home) ou
-[TLP](http://www.theplantlist.org).
+[Tropicos.org](https://www.tropicos.org/home) ou [The Plant
+List](http://www.theplantlist.org).
 
 ``` r
-readr::read_csv("testes/ameacadasPR.csv") |>
-  dplyr::filter(is.na(nome.BFG)) |>
+readr::read_csv("testes/ameacadasPR.csv", show_col_types = FALSE) |>
+  dplyr::filter(is.na(nome.BFG)) |> # filtra pelo nomes que não foram encontrados em Flora do Brasil
   dplyr::select(nome.original) |>
   purrr::flatten_chr() |>
   TNRS::TNRS() |>
-  dplyr::select(Name_submitted, Name_matched, Taxonomic_status, Accepted_name,
-    Source, Name_matched_url
+  dplyr::mutate(Name_matched = dplyr::if_else(Name_matched == "[No match found]", 
+                                              "Não encontrado", 
+                                              Name_matched)
+                ) |> 
+  dplyr::filter(Name_matched == "Não encontrado") |> 
+  dplyr::select("Nome enviado" = Name_submitted, "Correspondência" = Name_matched, 
+                "Estatus taxonômico" = Taxonomic_status, "Aceito" = Accepted_name
   ) |>
+  
   tibble::as_tibble()
-#> # A tibble: 23 × 6
-#>    Name_submitted     Name_matched      Taxonomic_status Accepted_name    Source
-#>    <chr>              <chr>             <chr>            <chr>            <chr> 
-#>  1 Achimenes ichtyos… Achimenes ichthy… "Synonym"        "Mandirola icht… "trop…
-#>  2 Aeschynomene mont… Aeschynomene mon… "Synonym"        "Aeschynomene m… "trop…
-#>  3 Begonia diaphones  Begonia diaphones "No opinion"     ""               "trop…
-#>  4 Begonia glabresce… [No match found]  ""               ""               ""    
-#>  5 Begonia klydophyl… [No match found]  ""               ""               ""    
-#>  6 Begonia succulenta [No match found]  ""               ""               ""    
-#>  7 Begonia tibagiens… [No match found]  ""               ""               ""    
-#>  8 Byttneria catalpa… Byttneria catalp… "Accepted"       "Byttneria cata… "trop…
-#>  9 Chaetoclamys psam… [No match found]  ""               ""               ""    
-#> 10 Echinodorus rhomb… [No match found]  ""               ""               ""    
-#> # … with 13 more rows, and 1 more variable: Name_matched_url <chr>
+#> # A tibble: 8 × 4
+#>   `Nome enviado`          Correspondência `Estatus taxonômico` Aceito
+#>   <chr>                   <chr>           <chr>                <chr> 
+#> 1 Begonia glabrescens     Não encontrado  ""                   ""    
+#> 2 Begonia klydophylla     Não encontrado  ""                   ""    
+#> 3 Begonia succulenta      Não encontrado  ""                   ""    
+#> 4 Begonia tibagiensis     Não encontrado  ""                   ""    
+#> 5 Chaetoclamys psammina   Não encontrado  ""                   ""    
+#> 6 Echinodorus rhombifolia Não encontrado  ""                   ""    
+#> 7 Ossaea australis        Não encontrado  ""                   ""    
+#> 8 Zexmenia viguerioides   Não encontrado  ""                   ""
 ```
 
-Os mesmo procedimentos realizados com a lista de espécies ameaçadas do
-estado do Paraná foram realizados com as lista do Rio Grande do Sul e
-Santa Catarina. Nestas listas todos os nomes foram validados.
+Os procedimentos de validação dos nomes científicos realizados com a
+lista de espécies ameaçadas do estado do Paraná foram realizados com as
+lista de ameaças do Rio Grande do Sul e de Santa Catarina. Nestas listas
+todos os nome científicos foram validados em [Flora do Brasil
+2020](http://floradobrasil.jbrj.gov.br/),
+[Tropicos.org](https://www.tropicos.org/home) ou [The Plant
+List](http://www.theplantlist.org).
+
+## Por que há nomes científicos não encontrados?
+
+Quando se defini uma espécie nova, seja de planta, animal, fungo,
+microrganismo ou fóssil, é obrigatório se estabelecer um nome científico
+para está espécies. Esta definição de uma nova espécie, incluindo o nome
+científico, é validada por outros cientistas, através da publicação da
+[nova espécie em artigo
+científico](https://doi.org/10.1600/036364415X686369). Entretanto,
+algumas vezes, o [taxonomista](https://pt.wikipedia.org/wiki/Taxonomia)
+(cientista que cuida da classificação, criação e organização das
+espécies), enquanto pesquisa, se depara com uma nova espécie e a nomeia,
+seja para registrar sua impressão de que se trata de um material
+diferente daqueles que ele observou, ou por qualquer outro motivo. Em
+teoria está novo nome deveria ser validado por outros taxonomistas. Mas
+o próprio taxonomista pode perceber, numa investigação mais refinada, de
+que não se trata de uma nova espécie, ou aquela material em que foi
+colocado o nome fica sem ser avaliado por outros cientístas ao longo do
+tempo. Assim, aquele nome científico que poderia ser validado torna-se
+apenas uma anotação, ou um registro de que o material observado chamou a
+atenção de um taxonomista. Veja por exemplo, [*Begonia
+glabrescens*](http://n2t.net/ark:/65665/39f0839e9-9cee-4adf-86e4-5220f3a97f17).
+Aquele nome anotado, que serviu apenas como registro, pode ser utilizado
+de um modo, digamos, pouco creterioso.
 
 # Novas versões
 

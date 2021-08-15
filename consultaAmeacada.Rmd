@@ -20,14 +20,18 @@ A [categoria de ameaça](https://www.oeco.org.br/dicionario-ambiental/27904-ente
 
 Os nomes científicos são validados conforme [Flora do Brasil 2020](http://floradobrasil.jbrj.gov.br/), através do pacote `R` [FLORA](http://www.github.com/gustavobio/flora).
 
+[Notas sobres as listas estaduais.](https://github.com/cadubio/ameacaR#notas-sobres-as-listas-estaduais)
+
 
 ### Como usar?
 
-Simples! Você pode
+Simples! A verificação dos nomes pode feita de **duas maneiras diferentes**.
 
-1. **Colar** ou **digitar** os nomes científicos das espécies no campo à esquerda.
+1. Você pode **colar** ou **digitar** os nomes científicos das espécies no campo à esquerda, ou
 
-2. Clicar em **enviar planilha** para submeter uma planilha com os nomes científicos. Após o envio, escolha a coluna da planilha que contém os nomes científicos a serem verificados, e clique no botão "verificar ameaçadas". Pode-se clicar em "ver coluna" para uma amostra com as 6 primeiras linhas da coluna selecionada. Veja a aba **Tutoriais** para mais detalhes.
+2. Você pode clicar em **enviar planilha** para submeter uma planilha com os nomes científicos. Após o envio, escolha a coluna da planilha que contém os nomes científicos a serem verificados, e clique no botão "verificar ameaçadas". Pode-se clicar em "ver coluna" para uma amostra com as 6 primeiras linhas da coluna selecionada. 
+
+Veja em **Tutoriais** os exemplos de como usar.
 
 ```{r nomes, echo=FALSE, message=FALSE, warning=FALSE}
 # Carrega as listas de espécies ameaçadas do sul do brasil
