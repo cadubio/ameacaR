@@ -466,11 +466,12 @@ output$genero <- DT::renderDataTable(server = FALSE, DT::datatable({
   req(length(generos) != 0)
   
   dplyr::bind_rows(ameacadasRS, ameacadasPR, ameacadasSC) |>
-  dplyr::select(-1) |>
-  dplyr::group_by(nome.BFG) |>
-  dplyr::summarise(dplyr::across(.fns = coalesce_by_column)) |>
-  dplyr::filter(stringr::str_detect(nome.BFG, generos))
-
+    dplyr::select(-1) |>
+    dplyr::group_by(nome.BFG) |>
+    dplyr::summarise(dplyr::across(.fns = coalesce_by_column)) |>
+    dplyr::filter(stringr::str_detect(nome.BFG, generos)) |> 
+    dplyr::rename("Espécie" = nome.BFG)
+  
 }))
 
 observeEvent(input$btn_observaCol, {
