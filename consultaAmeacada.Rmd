@@ -7,7 +7,8 @@ runtime: shiny
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-Autor: Carlos Eduardo de Siqueira [![envie um email](img/email28.png)](mailto:carlossiqueira@ima.sc.gov.br?subject=Dúvida App Espécies brasileiras ameaçadas de extinção)\ [![Github](img/GitHub-Mark-32px.png){height=28px}](https://github.com/cadubio/ameacaR)
+
+Autor: Carlos Eduardo de Siqueira [![envie um email](img/email28.png)](mailto:carlossiqueira@ima.sc.gov.br?subject=Dúvida%20App%20Espécies%20brasileiras%20ameaçadas%20de%20extinção) [![Github](img/GitHub-Mark-32px.png){height="28px"}](https://github.com/cadubio/ameacaR)
 
 <!-- ["\U2709"](mailto:carlossiqueira@ima.sc.gov.br?subject=App Espécies brasileiras ameaçadas de extinção) -->
 
@@ -15,21 +16,19 @@ Autor: Carlos Eduardo de Siqueira [![envie um email](img/email28.png)](mailto:ca
 
 Aqui você pode consultar quais espécies de plantas nativas do Brasil são consideradas ameaçadas de extinção.
 
-
 A [categoria de ameaça](https://www.oeco.org.br/dicionario-ambiental/27904-entenda-a-classificacao-da-lista-vermelha-da-iucn/) de cada táxon será verificada em nível nacional, com consultas à [Portaria n. 443 do Ministério do Meio Ambiente (MMA)](http://dados.gov.br/dataset/portaria_443) e ao [Centro Nacional de Conservação da Flora (CNCFlora)](http://cncflora.jbrj.gov.br/portal). A consulta também é realizada em nível estadual, pela [Resolução CONSEMA n. 51/2014](https://www.sde.sc.gov.br/index.php/biblioteca/consema/legislacao/resolucoes/325-resolucao-consema-no-512014-1/file) - Santa Catarina, pela [Lista Vermelha da Flora Ameaçada no Estado do Paraná](https://www.sociedadechaua.org/publicacoes) e pelo [Decreto n. 51.259/2014](http://www.mcn.fzb.rs.gov.br/conteudo/4816/?Homologada_a_nova_Lista_da_Flora_Ga%C3%BAcha_Amea%C3%A7ada_de_Extin%C3%A7%C3%A3o) - Rio Grande do Sul.
 
 Os nomes científicos são validados conforme [Flora do Brasil 2020](http://floradobrasil.jbrj.gov.br/), através do pacote `R` [FLORA](http://www.github.com/gustavobio/flora).
 
 Para mais detalhes sobre as a validação dos nomes científicos das listas estaduais veja [Notas sobres as listas estaduais.](https://github.com/cadubio/ameacaR#notas-sobres-as-listas-estaduais).
 
-
 ### Como usar?
 
 Simples! A verificação dos nomes pode feita de **duas maneiras diferentes**.
 
-1. Você pode **colar** ou **digitar** os nomes científicos das espécies no campo à esquerda, ou
+1.  Você pode **colar** ou **digitar** os nomes científicos das espécies no campo à esquerda, ou
 
-2. Você pode clicar em **enviar planilha** para submeter uma planilha com os nomes científicos. Após o envio, escolha a coluna da planilha que contém os nomes científicos a serem verificados, e clique no botão "verificar ameaçadas". Pode-se clicar em "ver coluna" para uma amostra com as 6 primeiras linhas da coluna selecionada. 
+2.  Você pode clicar em **enviar planilha** para submeter uma planilha com os nomes científicos. Após o envio, escolha a coluna da planilha que contém os nomes científicos a serem verificados, e clique no botão "verificar ameaçadas". Pode-se clicar em "ver coluna" para uma amostra com as 6 primeiras linhas da coluna selecionada.
 
 Veja em **Tutoriais** os exemplos de como usar.
 
@@ -39,8 +38,8 @@ ameacadasPR <- readr::read_rds("listas/ameacadasPR.rds")
 ameacadasSC <- readr::read_rds("listas/ameacadasSC.rds")
 ameacadasRS <- readr::read_rds("listas/ameacadasRS.rds")
 
-# Dois painéis "Pesquisar por ameaçadas" e "Tutoriais"
-tabsetPanel(tabPanel("Pesquisar por ameaçadas",
+# Três painéis "Pesquisar por espécie", "Pesquisar por gênereo" e "Tutoriais"
+tabsetPanel(tabPanel("Pesquisar por espécie",
                      tags$br(),
                      fluidPage(
                        fluidRow(
@@ -48,7 +47,7 @@ tabsetPanel(tabPanel("Pesquisar por ameaçadas",
                            width = 5,
                            textAreaInput(
                              inputId = "nomesColados",
-                             label = "Cole ou digite abaixo os nomes científicos",
+                             label = "Cole ou digite um nome científico por linha",
                              value = "",
                              height = "200px",
                              placeholder = "Exemplo:\nOcotea catharinensis\nAcianthera langeana\nBegonia fruticosa\nXylopia aromatica\nGuatteria australis\n..."
@@ -86,6 +85,30 @@ tabsetPanel(tabPanel("Pesquisar por ameaçadas",
                          DT::dataTableOutput("dados_recebidos"),
                        ))
                      )),
+            tabPanel("Pesquisar por Gênero",
+                     tags$br(),
+                     fluidPage(
+                       fluidRow(
+                         column(
+                           width = 12,
+                           textAreaInput(
+                             inputId = "genero",
+                             label = "Digite abaixo um gênero por linha",
+                             value = "",
+                             height = "200px",
+                             placeholder = "Exemplo:\nOcotea\nAcianthera\nBegonia\nXylopia\nGuatteria\n..."
+                           )
+                         ),
+                       ),
+
+                       tags$hr(),
+
+                       fluidRow(column(
+                         width = 12,
+                         DT::dataTableOutput("genero")
+                       ))
+                     )
+                     ),
             tabPanel(
               "Tutoriais",
               fluidPage(fluidRow(column(
@@ -224,7 +247,7 @@ caption = "Nomes científicos colados",
       "Buttons"  # add download buttons
     ),
   options = list(
-    language = list(url = '//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json'),
+    language = list(url = '//cdn.datatables.net/plug-ins/1.11.3/i18n/pt_br.json'),
     dom = 'Btip',
     buttons = list(
       list(
@@ -426,6 +449,30 @@ observeEvent(input$planilha, {
   ))
 })
 
+output$genero <- DT::renderDataTable(server = FALSE, DT::datatable({
+
+  coalesce_by_column <- function(df) {
+  return(dplyr::coalesce(!!! as.list(df)))
+  }
+  
+  generos <- 
+    stringr::str_split(input$genero,
+                       stringr::boundary("word"))[[1]] |> 
+    paste(collapse = "|")
+  
+  #purrr::map_df(tibble::as_tibble_col)
+
+  # Aguarda até que *nomes* não esteja vazio
+  req(length(generos) != 0)
+  
+  dplyr::bind_rows(ameacadasRS, ameacadasPR, ameacadasSC) |>
+  dplyr::select(-1) |>
+  dplyr::group_by(nome.BFG) |>
+  dplyr::summarise(dplyr::across(.fns = coalesce_by_column)) |>
+  dplyr::filter(stringr::str_detect(nome.BFG, generos))
+
+}))
+
 observeEvent(input$btn_observaCol, {
       coluna_selecionada <- input$colunas
       coluna <- arquivo_recebido() |>
@@ -434,4 +481,3 @@ observeEvent(input$btn_observaCol, {
   output$observaColuna <- renderTable(coluna)
   })
 ```
-
