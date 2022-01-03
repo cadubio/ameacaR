@@ -470,7 +470,7 @@ output$genero <- DT::renderDataTable(server = FALSE, DT::datatable({
     dplyr::group_by(nome.BFG) |>
     dplyr::summarise(dplyr::across(.fns = coalesce_by_column)) |>
     dplyr::filter(stringr::str_detect(nome.BFG, generos)) |> 
-    dplyr::rename("Espécie" = nome.BFG)
+    dplyr::rename("Espécie" = nome.BFG, PR = pr, RS = rs, SC = sc)
   
 },
   extensions = c(
