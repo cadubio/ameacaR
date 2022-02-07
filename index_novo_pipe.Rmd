@@ -6,7 +6,6 @@ runtime: shiny
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(magrittr)
 ```
 
 Autor: Carlos Eduardo de Siqueira [![envie um email](img/email28.png)](mailto:carlossiqueira@ima.sc.gov.br?subject=Dúvida%20App%20Espécies%20brasileiras%20ameaçadas%20de%20extinção) [![Github](img/GitHub-Mark-32px.png){height="28px"}](https://github.com/cadubio/ameacaR)
@@ -159,20 +158,20 @@ output$dados_colados <- DT::renderDataTable(server = FALSE, DT::datatable({
   nomes <-
   stringr::str_extract_all(input$nomesColados,
                            stringr::regex("\\b.*(?=\\n)"
-                           ), simplify = TRUE) %>%
+                           ), simplify = TRUE) |>
   purrr::map_df(tibble::as_tibble_col)
 
   # Aguarda até que *nomes* não esteja vazio
   req(length(nomes) != 0)
 
-  nomes2 <- nomes %>%
-      dplyr::filter(value != "") %>%
+  nomes2 <- nomes |>
+      dplyr::filter(value != "") |>
       dplyr::mutate(value = stringr::str_replace(value,
                                                  pattern = "(\\saff(?=\\s)|\\ss?sp\\b|\\scf(?=\\s))",
-                                                 replacement = "\\1." )) %>%
+                                                 replacement = "\\1." )) |>
       dplyr::mutate(value = stringr::str_replace(value,
                                                  pattern = "(\\.\\.)",
-                                                 replacement = "." )) %>%
+                                                 replacement = "." )) |>
       dplyr::mutate(
         value = dplyr::case_when(
           stringr::str_detect(value, "\\svar\\.?|\\ssubsp\\.?|\\sssp\\.?") ~ stringr::word(value, 1, 4),
@@ -180,7 +179,7 @@ output$dados_colados <- DT::renderDataTable(server = FALSE, DT::datatable({
           stringr::str_detect(value, "[A-z]+\\s[a-z]+\\b") ~ stringr::word(value, 1, 2),
           TRUE ~ stringr::word(value, 1)
         )
-      ) %>%
+      ) |>
       dplyr::distinct(value)
 
   # Pega os nomes em Flora do Brasil 2020
@@ -202,22 +201,22 @@ output$dados_colados <- DT::renderDataTable(server = FALSE, DT::datatable({
            ameacadasRS),
       dplyr::inner_join,
       by = c("search.str" = "nome.BFG")
-    ) %>%
-      dplyr::group_by(original.search) %>%
+    ) |>
+      dplyr::group_by(original.search) |>
       dplyr::summarise(dplyr::across(.cols = c(pr, sc, rs),
-                                     ~ toString(na.omit(.x)))) %>%
+                                     ~ toString(na.omit(.x)))) |>
       dplyr::transmute(dplyr::across(.cols = dplyr::everything(),
-                                     list( ~ dplyr::na_if(., "")))) %>%
+                                     list( ~ dplyr::na_if(., "")))) |>
       dplyr::mutate(dplyr::across(.cols = -original.search_1,
-                                 ~stringr::str_replace(., "([A-Z]{2})(,\\s[A-Z]{2})+", "\\1"))) %>%
+                                 ~stringr::str_replace(., "([A-Z]{2})(,\\s[A-Z]{2})+", "\\1"))) |>
       dplyr::rename_with( ~ gsub("_1", "", .x, fixed = TRUE))
 
     # Dividiu-se em dois objetos (comparaTudo e compara2) apenas para facilitar o entendimento.
     #
     compara2 <-
       dplyr::left_join(nomes_BFG, comparaTudo,
-                       by = "original.search") %>%
-      dplyr::distinct(original.search, .keep_all = T) %>%
+                       by = "original.search") |>
+      dplyr::distinct(original.search, .keep_all = T) |>
       dplyr::mutate(
         nome_correto = dplyr::case_when(
           notes == "was misspelled" ~ "grafia incorreta",
@@ -226,8 +225,8 @@ output$dados_colados <- DT::renderDataTable(server = FALSE, DT::datatable({
           notes == "was misspelled|replaced synonym" ~ "grafia incorreta, sinônimo",
           TRUE ~ "correto"
         )
-      ) %>%
-      dplyr::mutate(nome_aceito = dplyr::if_else(nome_correto == "correto", "\U2714", search.str)) %>%
+      ) |>
+      dplyr::mutate(nome_aceito = dplyr::if_else(nome_correto == "correto", "\U2714", search.str)) |>
       dplyr::select(
         familia = family,
         especie = original.search,
@@ -298,7 +297,7 @@ arquivo_recebido <- reactive({
              data.table::fread(inFile$datapath,
                                encoding = "Latin-1",
                                fill = TRUE
-             ) %>%
+             ) |>
                janitor::clean_names()
 
            }
@@ -338,19 +337,19 @@ observeEvent(input$planilha, {
   # se não tem, adiciona o ponto.
   # Se o nome contém var. ou subsp. pega as quatro primeiras palavras.
   # Se o nome contém cf. ou aff. pega as três primeiras palavras.
-  nomes <- arquivo_recebido()  %>%
-    dplyr::filter(!!coluna_selecionada != "") %>%
+  nomes <- arquivo_recebido()  |>
+    dplyr::filter(!!coluna_selecionada != "") |>
     dplyr::mutate(
       !!coluna_selecionada := stringr::str_replace(.data[[coluna_selecionada]],
                                                    pattern = "(\\saff(?=\\s)|\\ss?sp\\b|\\scf(?=\\s))",
                                                    replacement = "\\1.")
-    ) %>%
+    ) |>
     # Essa próxima linha pode ser removida se a regex da linha anterior for melhor trabalhada
     dplyr::mutate(
       !!coluna_selecionada := stringr::str_replace(.data[[coluna_selecionada]],
                                                    pattern = "(\\.\\.)",
                                                    replacement = ".")
-    ) %>%
+    ) |>
     dplyr::mutate(
       value = dplyr::case_when(
         stringr::str_detect(.data[[coluna_selecionada]], "\\svar\\.?|\\ssubsp\\.?|\\sssp\\.?") ~ stringr::word(.data[[coluna_selecionada]], 1, 4),
@@ -358,7 +357,7 @@ observeEvent(input$planilha, {
         stringr::str_detect(.data[[coluna_selecionada]], "[A-z]+\\s[a-z]+\\b") ~ stringr::word(.data[[coluna_selecionada]], 1, 2),
         TRUE ~ stringr::word(.data[[coluna_selecionada]], 1)
       )
-      ) %>%
+      ) |>
     dplyr::distinct(value)
 
   # Busca as informações do nomes em Flora do Brasil 2020
@@ -372,21 +371,21 @@ observeEvent(input$planilha, {
        ameacadasRS),
   dplyr::inner_join,
   by = c("search.str" = "nome.BFG")
-) %>%
-  #dplyr::select(nome.original, pr, sc, rs) %>%
-  dplyr::group_by(original.search) %>%
+) |>
+  #dplyr::select(nome.original, pr, sc, rs) |>
+  dplyr::group_by(original.search) |>
   dplyr::summarise(dplyr::across(.cols = c(pr,sc,rs),
-                                 ~ toString(na.omit(.x)))) %>%
+                                 ~ toString(na.omit(.x)))) |>
   dplyr::transmute(dplyr::across(.cols = dplyr::everything(),
-                                 list(~dplyr::na_if(.,"")))) %>%
+                                 list(~dplyr::na_if(.,"")))) |>
   dplyr::rename_with(~gsub("_1", "", .x, fixed = TRUE))
 
    # Foi divido em dois objetos (comparaTudo e compara2) apenas para facilitar a futura leitura do código.
    # As colunas com as categorias de ameaça de cada estado são mescladas ao objeto com os nomes científicos.
    compara2 <-
   dplyr::left_join(nomes_BFG, comparaTudo,
-                   by = "original.search") %>%
-  dplyr::distinct(original.search, .keep_all = T) %>%
+                   by = "original.search") |>
+  dplyr::distinct(original.search, .keep_all = T) |>
   dplyr::mutate(
     nome_correto = dplyr::case_when(
       notes == "was misspelled" ~ "grafia incorreta",
@@ -395,8 +394,8 @@ observeEvent(input$planilha, {
       notes == "was misspelled|replaced synonym" ~ "grafia incorreta, sinônimo",
       TRUE ~ "correto"
     )
-  ) %>%
-  dplyr::mutate(nome_aceito = dplyr::if_else(nome_correto == "correto", "\U2714", search.str)) %>%
+  ) |>
+  dplyr::mutate(nome_aceito = dplyr::if_else(nome_correto == "correto", "\U2714", search.str)) |>
   dplyr::select(
     familia = family,
     especie = original.search,
@@ -458,7 +457,7 @@ output$genero <- DT::renderDataTable(server = FALSE, DT::datatable({
   
   generos <- 
     stringr::str_split(input$genero,
-                       stringr::boundary("word"))[[1]] %>% 
+                       stringr::boundary("word"))[[1]] |> 
     paste(collapse = "|")
   
   #purrr::map_df(tibble::as_tibble_col)
@@ -466,11 +465,11 @@ output$genero <- DT::renderDataTable(server = FALSE, DT::datatable({
   # Aguarda até que *nomes* não esteja vazio
   req(length(generos) != 0)
   
-  dplyr::bind_rows(ameacadasRS, ameacadasPR, ameacadasSC) %>%
-    dplyr::select(-1) %>%
-    dplyr::group_by(nome.BFG) %>%
-    dplyr::summarise(dplyr::across(.fns = coalesce_by_column)) %>%
-    dplyr::filter(stringr::str_detect(nome.BFG, generos)) %>% 
+  dplyr::bind_rows(ameacadasRS, ameacadasPR, ameacadasSC) |>
+    dplyr::select(-1) |>
+    dplyr::group_by(nome.BFG) |>
+    dplyr::summarise(dplyr::across(.fns = coalesce_by_column)) |>
+    dplyr::filter(stringr::str_detect(nome.BFG, generos)) |> 
     dplyr::rename("Espécie" = nome.BFG, PR = pr, RS = rs, SC = sc)
   
 },
@@ -499,8 +498,8 @@ output$genero <- DT::renderDataTable(server = FALSE, DT::datatable({
 
 observeEvent(input$btn_observaCol, {
       coluna_selecionada <- input$colunas
-      coluna <- arquivo_recebido() %>%
-        dplyr::select(coluna_selecionada) %>%
+      coluna <- arquivo_recebido() |>
+        dplyr::select(coluna_selecionada) |>
         head()
   output$observaColuna <- renderTable(coluna)
   })
